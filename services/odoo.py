@@ -14,7 +14,7 @@ class OdooService:
     def create_employee(self, employee_data):
         # Create the employee
         employee_email = employee_data['work_email']
-        duplicated_employee = self.get_employee_by_email(employee_email)
+        duplicated_employee = self.find_employee_by_email(employee_email)
         if duplicated_employee:
             raise Exception(f'Ya se encuentra registrado un empleado con el correo electrónico {employee_email} en Odoo')
         employee_id = self.models.execute_kw(
@@ -27,7 +27,7 @@ class OdooService:
     def create_user(self, user_data):
         # Create the user
         user_email = user_data['email']
-        duplicated_user = self.get_user_by_email(user_email)
+        duplicated_user = self.find_user_by_email(user_email)
         if duplicated_user:
             raise Exception(f'Ya se encuentra registrado un usuario con el correo electrónico {user_email} en Odoo')
         user_id = self.models.execute_kw(
@@ -43,7 +43,7 @@ class OdooService:
             OdooConfig.ODOO_DB_NAME, self.uid, OdooConfig.ODOO_PASSWORD,
             'res.users', 'search_read',
             [[['id', '=', user_id]]],
-            {'fields': ['id', 'name', 'login', 'email']}
+            {'fields': ['id', 'name', 'login', 'email', 'employee_id', 'employee_ids']}
         )
         return user_ids[0] if user_ids else None
 
@@ -57,15 +57,15 @@ class OdooService:
         )
         return employee_ids[0] if employee_ids else None
     
-    def get_user_by_email(self, email) -> dict | None:
+    def find_user_by_email(self, email) -> dict | None:
         # Get the user by email
         user_ids = self.models.execute_kw(
             OdooConfig.ODOO_DB_NAME, self.uid, OdooConfig.ODOO_PASSWORD,
             'res.users', 'search_read',
             [[['email', '=', email]]],
-            {'fields': ['id', 'name', 'login', 'email']}
+            {'fields': ['id', 'name', 'login', 'email', 'employee_id', 'employee_ids']}
         )
-        return user_ids[0] if user_ids else None
+        return user_ids
     
     def find_employee_by_email(self, email):
         # Get the employee by email
@@ -73,7 +73,7 @@ class OdooService:
             OdooConfig.ODOO_DB_NAME, self.uid, OdooConfig.ODOO_PASSWORD,
             'hr.employee', 'search_read',
             [[['work_email', '=', email]]],
-            {'fields': ['id', 'name', 'work_email']}
+            {'fields': ['id', 'name', 'work_email', 'private_email']}
         )
         return employee_ids
     

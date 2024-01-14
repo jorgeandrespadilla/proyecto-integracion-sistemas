@@ -5,7 +5,7 @@ from config import MailConfig
 
 class MailService:
     
-    def send(dest_email: str, subject: str, html_content: str):
+    def send_email(self, dest_email: str, subject: str, html_content: str):
         message = Mail(
             from_email=MailConfig.SENDER_EMAIL,
             to_emails=dest_email,

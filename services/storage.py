@@ -22,7 +22,9 @@ class NextCloudService:
             data={
                 'userid': user_data['email'],
                 'password': user_data['password'],
+                'displayName': user_data['name'],
                 'email': user_data['email'],
+                'quota': user_data['quota_in_gb'] * 1024 * 1024 * 1024,
             }
         )
         content = response.json()
