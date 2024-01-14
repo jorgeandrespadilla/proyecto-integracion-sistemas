@@ -24,6 +24,29 @@ class OdooService:
         )
         return employee_id
     
+    def create_user(self, user_data):
+        # Create the user
+        user_email = user_data['email']
+        duplicated_user = self.get_user_by_email(user_email)
+        if duplicated_user:
+            raise Exception(f'Ya se encuentra registrado un usuario con el correo electrónico {user_email} en Odoo')
+        user_id = self.models.execute_kw(
+            OdooConfig.ODOO_DB_NAME, self.uid, OdooConfig.ODOO_PASSWORD,
+            'res.users', 'create',
+            [user_data]
+        )
+        return user_id
+    
+    def get_user_by_id(self, user_id) -> dict | None:
+        # Get the user by id
+        user_ids = self.models.execute_kw(
+            OdooConfig.ODOO_DB_NAME, self.uid, OdooConfig.ODOO_PASSWORD,
+            'res.users', 'search_read',
+            [[['id', '=', user_id]]],
+            {'fields': ['id', 'name', 'login', 'email']}
+        )
+        return user_ids[0] if user_ids else None
+
     def get_employee_by_id(self, employee_id) -> dict | None:
         # Get the employee by id
         employee_ids = self.models.execute_kw(
@@ -33,6 +56,16 @@ class OdooService:
             {'fields': ['id', 'name', 'work_email']}
         )
         return employee_ids[0] if employee_ids else None
+    
+    def get_user_by_email(self, email) -> dict | None:
+        # Get the user by email
+        user_ids = self.models.execute_kw(
+            OdooConfig.ODOO_DB_NAME, self.uid, OdooConfig.ODOO_PASSWORD,
+            'res.users', 'search_read',
+            [[['email', '=', email]]],
+            {'fields': ['id', 'name', 'login', 'email']}
+        )
+        return user_ids[0] if user_ids else None
     
     def find_employee_by_email(self, email):
         # Get the employee by email
@@ -44,6 +77,17 @@ class OdooService:
         )
         return employee_ids
     
+    def delete_user(self, user_id):
+        # Delete the user
+        user_exists = self.get_user_by_id(user_id)
+        if not user_exists:
+            raise Exception(f'No se encontró el usuario con ID {user_id}')
+        self.models.execute_kw(
+            OdooConfig.ODOO_DB_NAME, self.uid, OdooConfig.ODOO_PASSWORD,
+            'res.users', 'unlink',
+            [[user_id]]
+        )
+
     def delete_employee(self, employee_id):
         # Delete the employee
         employee_exists = self.get_employee_by_id(employee_id)
