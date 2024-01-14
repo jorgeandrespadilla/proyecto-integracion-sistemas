@@ -21,12 +21,12 @@ def get_from_request(key: str, required: bool = True):
     return content[key]
 
 def success_response(data: dict = {}, status_code: int = 200):
-    return jsonify(data), 200
+    return jsonify(data), status_code
         
 def failure_response(message: str, status_code: int = 400):
     return jsonify({
         'message': message,
-    }), 400
+    }), status_code
 
 @app.get('/')
 def api():
@@ -34,7 +34,6 @@ def api():
 
 @app.post('/onboarding')
 def onboarding():
-    content = request.json
     try:
         name = get_from_request('name')
         work_phone = get_from_request('work_phone')
