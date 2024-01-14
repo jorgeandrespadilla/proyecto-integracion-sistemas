@@ -34,7 +34,7 @@ pip install -r requirements.txt
 Para ejecutar la API, se debe ejecutar el siguiente comando:
 
 ```bash
-python app.py
+flask run --host=0.0.0.0
 ```
 
 ### Ejecución de servicios Docker

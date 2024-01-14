@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify, request
 from services.mail import MailService
 from services.odoo import OdooService
 from services.storage import NextCloudService
@@ -11,8 +11,38 @@ mail_service = MailService()
 odoo_service = OdooService()
 nextcloud_service = NextCloudService()
 
-def add(name: str, work_phone: str, private_email: str):
-    email = create_user_email(name, 'example.com')
+def get_from_request(key: str, required: bool = True):
+    content = request.json
+    if key not in content:
+        if required:
+            raise Exception(f"'{key}' is required")
+        else:
+            return None
+    return content[key]
+
+def success_response(data: dict = {}, status_code: int = 200):
+    return jsonify(data), 200
+        
+def failure_response(message: str, status_code: int = 400):
+    return jsonify({
+        'message': message,
+    }), 400
+
+@app.get('/')
+def api():
+    return 'API is running'
+
+@app.post('/onboarding')
+def onboarding():
+    content = request.json
+    try:
+        name = get_from_request('name')
+        work_phone = get_from_request('work_phone')
+        private_email = get_from_request('private_email')
+    except Exception as e:
+        return failure_response(str(e))
+    
+    email = create_user_email(name, "example.com")
 
     # Odoo: create user and employee
     try:
@@ -34,6 +64,7 @@ def add(name: str, work_phone: str, private_email: str):
 
     except Exception as e:
         print(f'Error al crear el empleado: {e}')
+        return failure_response(str(e))
 
     # Nextcloud (storage): create user
     try:
@@ -47,11 +78,12 @@ def add(name: str, work_phone: str, private_email: str):
         print(f'Usuario creado en Nextcloud')
     except Exception as e:
         print(f'Error al crear el usuario de Nextcloud: {e}')
+        return failure_response(str(e))
 
     # Send email
     try:
         email_data = onboarding_email_template(name, email, password)
-        mail_service.send(
+        mail_service.send_email(
             private_email,
             email_data.subject,
             email_data.body
@@ -59,9 +91,18 @@ def add(name: str, work_phone: str, private_email: str):
         print(f"Se ha enviado un correo a '{private_email}' con las instrucciones")
     except Exception as e:
         print(f'Error al enviar el correo: {e}')
+        return failure_response("Error al enviar el correo")
+
+    return success_response()
 
 
-def delete(email: str):
+@app.post('/offboarding')
+def offboarding():
+    try:
+        email = get_from_request('email')
+    except Exception as e:
+        return failure_response(str(e))
+
     # Odoo: delete user and employee
     try:
         user = odoo_service.find_user_by_email(email)
@@ -81,6 +122,7 @@ def delete(email: str):
             print('Empleado eliminado')
     except Exception as e:
         print(f'Error al eliminar el empleado: {e}')
+        return failure_response(str(e))
 
     # Nextcloud (storage): delete user
     try:
@@ -88,11 +130,12 @@ def delete(email: str):
         print('Usuario eliminado de Nextcloud')
     except Exception as e:
         print(f'Error al eliminar el usuario de Nextcloud: {e}')
+        return failure_response(str(e))
 
     # Send email
     try:
         email_data = offboarding_email_template(employee_name)
-        mail_service.send(
+        mail_service.send_email(
             employee_private_email,
             email_data.subject,
             email_data.body
@@ -100,6 +143,6 @@ def delete(email: str):
         print(f"Se ha enviado un correo a '{employee_private_email}' con el aviso")
     except Exception as e:
         print(f'Error al enviar el correo: {e}')
+        return failure_response("Error al enviar el correo")
 
-# add('Juan Perez', '1234567890', 'user@gmail.com')
-# delete('juan.perez@example.com')
+    return success_response()
