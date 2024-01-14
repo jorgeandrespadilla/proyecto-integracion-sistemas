@@ -2,6 +2,7 @@ from flask import Flask
 from services.mail import MailService
 from services.odoo import OdooService
 from services.storage import NextCloudService
+from templates import offboarding_email_template, onboarding_email_template
 from utils import create_user_email, generate_password
 
 app = Flask(__name__)
@@ -49,10 +50,11 @@ def add(name: str, work_phone: str, private_email: str):
 
     # Send email
     try:
+        email_data = onboarding_email_template(name, email, password)
         mail_service.send(
             private_email,
-            'Bienvenido a nuestra plataforma',
-            'Hola,\n\n¡Bienvenido a nuestra plataforma! Gracias por unirte.'
+            email_data.subject,
+            email_data.body
         )
         print(f"Se ha enviado un correo a '{private_email}' con las instrucciones")
     except Exception as e:
@@ -73,8 +75,8 @@ def delete(email: str):
         if not employee:
             print('No se encontró el empleado')
         else:
+            employee_name = employee[0]['name']
             employee_private_email = employee[0]['private_email']
-            print(employee_private_email) # TODO: delete
             odoo_service.delete_employee(employee[0]['id'])
             print('Empleado eliminado')
     except Exception as e:
@@ -89,10 +91,11 @@ def delete(email: str):
 
     # Send email
     try:
+        email_data = offboarding_email_template(employee_name)
         mail_service.send(
             employee_private_email,
-            'Tu cuenta ha sido eliminada',
-            'Hola,\n\nTu cuenta ha sido eliminada.'
+            email_data.subject,
+            email_data.body
         )
         print(f"Se ha enviado un correo a '{employee_private_email}' con el aviso")
     except Exception as e:
