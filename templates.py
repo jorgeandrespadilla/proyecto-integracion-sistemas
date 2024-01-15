@@ -14,7 +14,7 @@ def onboarding_email_template(name: str, email: str, password: str) -> EmailTemp
         <br/><br/>
         Bienvenido/a a nuestra empresa. De ahora en adelante tendrás acceso a los servicios internos de la empresa (correo, almacenamiento, etc.).<br/><br/>Tu correo electrónico empresarial es: 
         <pre>{email}</pre><br/>
-        Tu contraseña temporal en la plataforma de almacenamiento es: <pre>{password}</pre><br/>
+        Tu contraseña temporal para todas las plataformas es: <pre>{password}</pre><br/>
         Por favor, no compartas esta información con nadie y procura cambiar tu contraseña lo antes posible.
         <br/><br/>
         Saludos cordiales,<br/>

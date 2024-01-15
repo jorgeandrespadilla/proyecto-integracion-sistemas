@@ -42,6 +42,7 @@ def onboarding():
         return failure_response(str(e))
     
     email = create_user_email(name, "example.com")
+    password = generate_password()
 
     # Odoo: create user and employee
     try:
@@ -57,6 +58,7 @@ def onboarding():
             'name': name,
             'login': email,
             'email': email,
+            'password': password,
             'employee_ids': [employee_id],
         })
         print(f'Usuario creado con ID {user_id}')
@@ -67,7 +69,6 @@ def onboarding():
 
     # Nextcloud (storage): create user
     try:
-        password = generate_password()
         nextcloud_service.create_user({
             'email': email,
             'password': password,
