@@ -93,6 +93,8 @@ def offboarding():
         email = get_from_request('email')
     except Exception as e:
         return failure_response(str(e))
+    
+    user_exists = False
 
     # Odoo: delete user and employee
     try:
@@ -100,6 +102,7 @@ def offboarding():
         if not user:
             print('No se encontró el usuario en Odoo')
         else:
+            user_exists = True
             odoo_service.delete_user(user[0]['id'])
             print('Usuario eliminado de Odoo')
 
@@ -107,6 +110,7 @@ def offboarding():
         if not employee:
             print('No se encontró el empleado en Odoo')
         else:
+            user_exists = True
             employee_name = employee[0]['name']
             employee_private_email = employee[0]['private_email']
             odoo_service.delete_employee(employee[0]['id'])
@@ -118,14 +122,31 @@ def offboarding():
 
     # Nextcloud (storage): delete user
     try:
-        nextcloud_service.delete_user(email)
-        print('Usuario eliminado de Nextcloud')
+        user = nextcloud_service.get_user_by_id(email)
+        if not user:
+            print('No se encontró el usuario en Nextcloud')
+        else:
+            user_exists = True
+            nextcloud_service.delete_user(email)
+            print('Usuario eliminado de Nextcloud')
     except Exception as e:
         message = f'Error al eliminar el usuario de Nextcloud: {e}'
         print(message)
         return failure_response(message)
 
     # Send email
+    if not employee:
+        if user_exists:
+            message = f"Usuario '{email}' eliminado de las plataformas de la empresa"
+            print(message)
+            return success_response({
+                "message": message
+            })
+        else:
+            message = f"No se pudo encontrar al usuario con el correo '{email}' en las plataformas de la empresa"
+            print(message)
+            return failure_response(message)
+
     try:
         email_data = offboarding_email_template(employee_name)
         mail_service.send_email(
@@ -133,13 +154,13 @@ def offboarding():
             email_data.subject,
             email_data.body
         )
-        print(f"SSe ha enviado un correo a '{employee_private_email}'")
+        print(f"Se ha enviado un correo a '{employee_private_email}'")
     except Exception as e:
         message = f'Error al enviar el correo con Sendgrid: {e}'
         print(message)
         return failure_response(message)
     
-    message = f'Proceso de offboarding completado para usuario {email}'
+    message = f"Proceso de offboarding completado para usuario '{email}'"
     print(message)
     return success_response({
         "message": message
