@@ -119,9 +119,10 @@ def offboarding():
             odoo_service.delete_employee(employee[0]['id'])
             print('Empleado eliminado de Odoo')
     except Exception as e:
-        message = f'Error al eliminar el empleado: {e}'
+        message = f'Error al eliminar el empleado'
         print(message)
-        return failure_response(message)
+        print(e)
+        return failure_response(message, errors=[str(e)])
 
     # Nextcloud (storage): delete user
     try:
@@ -133,9 +134,10 @@ def offboarding():
             nextcloud_service.delete_user(email)
             print('Usuario eliminado de Nextcloud')
     except Exception as e:
-        message = f'Error al eliminar el usuario de Nextcloud: {e}'
+        message = f'Error al eliminar el usuario de Nextcloud'
         print(message)
-        return failure_response(message)
+        print(e)
+        return failure_response(message, errors=[str(e)])
 
     # Send email
     if not employee:
@@ -159,11 +161,12 @@ def offboarding():
         )
         print(f"Se ha enviado un correo a '{employee_private_email}'")
     except Exception as e:
-        message = f'Error al enviar el correo con Sendgrid: {e}'
+        message = f'Error al enviar el correo con Sendgrid'
         print(message)
-        return failure_response(message)
+        print(e)
+        return failure_response(message, errors=[str(e)])
     
-    message = f"Proceso de offboarding completado para usuario '{email}'"
+    message = f"Proceso de offboarding completado para usuario con correo electrónico '{email}'"
     print(message)
     return success_response({
         "message": message
