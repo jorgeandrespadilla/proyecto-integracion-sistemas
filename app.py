@@ -63,7 +63,7 @@ def onboarding():
 
         # Send email
         try:
-            email_data = onboarding_email_template(onboarding_data.name, onboarding_data.private_email, onboarding_data.password)
+            email_data = onboarding_email_template(onboarding_data.name, onboarding_data.company_email, onboarding_data.password)
             mail_service.send_email(
                 onboarding_data.private_email,
                 email_data.subject,
@@ -80,7 +80,7 @@ def onboarding():
         print(e.with_traceback())
         return failure_response(message)
     
-    message = f'Proceso de onboarding completado para usuario {onboarding_data.name} ({onboarding_data.private_email})'
+    message = f'Proceso de onboarding completado para usuario {onboarding_data.name} ({onboarding_data.company_email})'
     print(message)
     return success_response({
         "message": message
