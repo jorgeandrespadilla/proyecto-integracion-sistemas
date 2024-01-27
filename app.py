@@ -145,4 +145,4 @@ def offboarding():
         print(f'Sendgrid - Error al enviar el correo: {e}')
         return failure_response("Error al enviar el correo")
 
-    return success_response()
+    return success_response(f"Usuario eliminado ({email})")
