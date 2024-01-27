@@ -69,7 +69,7 @@ def onboarding():
                 email_data.subject,
                 email_data.body
             )
-            print("Correo enviado a '{onboarding_data.private_email}'")
+            print(f"Correo enviado a '{onboarding_data.private_email}'")
         except Exception as e:
             raise Exception("Error al enviar el correo con Sendgrid") from e
 
@@ -79,7 +79,12 @@ def onboarding():
         print(message)
         print(e.with_traceback())
         return failure_response(message)
-    print('Proceso de onboarding completado')
+    
+    message = f'Proceso de onboarding completado para usuario {onboarding_data.name}'
+    print(message)
+    return success_response({
+        "message": message
+    })
 
 
 @app.post('/offboarding')
@@ -133,5 +138,9 @@ def offboarding():
         message = f'Error al enviar el correo con Sendgrid: {e}'
         print(message)
         return failure_response(message)
-
-    return success_response('Proceso de offboarding completado')
+    
+    message = f'Proceso de offboarding completado para usuario {email}'
+    print(message)
+    return success_response({
+        "message": message
+    })
