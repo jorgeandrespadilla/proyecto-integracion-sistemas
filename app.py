@@ -52,7 +52,7 @@ def onboarding():
             'work_email': email,
             'private_email': private_email,
         })
-        print(f'Empleado creado con ID {employee_id}')
+        print(f'Odoo - Empleado creado con ID {employee_id}')
 
         user_id = odoo_service.create_user({
             'name': name,
@@ -61,10 +61,10 @@ def onboarding():
             'password': password,
             'employee_ids': [employee_id],
         })
-        print(f'Usuario creado con ID {user_id}')
+        print(f'Odoo - Usuario creado con ID {user_id}')
 
     except Exception as e:
-        print(f'Error al crear el empleado: {e}')
+        print(f'Odoo - Error al crear el empleado: {e}')
         return failure_response(str(e))
 
     # Nextcloud (storage): create user
@@ -75,9 +75,9 @@ def onboarding():
             'name': name,
             'quota_in_gb': 5,
         })
-        print(f'Usuario creado en Nextcloud')
+        print(f'Nextcloud - Usuario creado')
     except Exception as e:
-        print(f'Error al crear el usuario de Nextcloud: {e}')
+        print(f'Nextcloud - Error al crear el usuario de Nextcloud: {e}')
         return failure_response(str(e))
 
     # Send email
@@ -88,12 +88,12 @@ def onboarding():
             email_data.subject,
             email_data.body
         )
-        print(f"Se ha enviado un correo a '{private_email}' con las instrucciones")
+        print(f"Sendgrid - Se ha enviado un correo a '{private_email}' con las instrucciones")
     except Exception as e:
-        print(f'Error al enviar el correo: {e}')
-        return failure_response("Error al enviar el correo")
+        print(f'Sendgrid - Error al enviar el correo: {e}')
+        return failure_response("Sendgrid - Error al enviar el correo")
 
-    return success_response()
+    return success_response(f"Usuario creado ({email})")
 
 
 @app.post('/offboarding')
@@ -107,29 +107,29 @@ def offboarding():
     try:
         user = odoo_service.find_user_by_email(email)
         if not user:
-            print('No se encontró el usuario')
+            print('Odoo - No se encontró el usuario')
         else:
             odoo_service.delete_user(user[0]['id'])
-            print('Usuario eliminado')
+            print('Odoo - Usuario eliminado')
 
         employee = odoo_service.find_employee_by_email(email)
         if not employee:
-            print('No se encontró el empleado')
+            print('Odoo - No se encontró el empleado')
         else:
             employee_name = employee[0]['name']
             employee_private_email = employee[0]['private_email']
             odoo_service.delete_employee(employee[0]['id'])
-            print('Empleado eliminado')
+            print('Odoo - Empleado eliminado')
     except Exception as e:
-        print(f'Error al eliminar el empleado: {e}')
+        print(f'Odoo - Error al eliminar el empleado: {e}')
         return failure_response(str(e))
 
     # Nextcloud (storage): delete user
     try:
         nextcloud_service.delete_user(email)
-        print('Usuario eliminado de Nextcloud')
+        print('Nextcloud - Usuario eliminado de Nextcloud')
     except Exception as e:
-        print(f'Error al eliminar el usuario de Nextcloud: {e}')
+        print(f'Nextcloud - Error al eliminar el usuario de Nextcloud: {e}')
         return failure_response(str(e))
 
     # Send email
@@ -140,9 +140,9 @@ def offboarding():
             email_data.subject,
             email_data.body
         )
-        print(f"Se ha enviado un correo a '{employee_private_email}' con el aviso")
+        print(f"Sendgrid - Se ha enviado un correo a '{employee_private_email}' con el aviso")
     except Exception as e:
-        print(f'Error al enviar el correo: {e}')
+        print(f'Sendgrid - Error al enviar el correo: {e}')
         return failure_response("Error al enviar el correo")
 
     return success_response()
