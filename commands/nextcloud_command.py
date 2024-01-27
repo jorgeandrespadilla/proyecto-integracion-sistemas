@@ -32,7 +32,7 @@ class NextCloudCommand(ICommand):
         try:
             print("Creando cuenta en NextCloud")
             user_id = self._receiver.create_user({
-                'email': self._onboarding_data.private_email,
+                'email': self._onboarding_data.company_email,
                 'password': self._onboarding_data.password,
                 'name': self._onboarding_data.name,
                 'quota_in_gb': 5,

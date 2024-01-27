@@ -119,7 +119,7 @@ def offboarding():
     # Nextcloud (storage): delete user
     try:
         nextcloud_service.delete_user(email)
-        print('Nextcloud - Usuario eliminado de Nextcloud')
+        print('Usuario eliminado de Nextcloud')
     except Exception as e:
         message = f'Error al eliminar el usuario de Nextcloud: {e}'
         print(message)
