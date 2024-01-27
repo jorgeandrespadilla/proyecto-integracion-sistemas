@@ -16,7 +16,7 @@ class OdooService:
         employee_email = employee_data['work_email']
         duplicated_employee = self.find_employee_by_email(employee_email)
         if duplicated_employee:
-            raise Exception(f'Ya se encuentra registrado un empleado con el correo electrónico {employee_email} en Odoo')
+            raise Exception(f"Ya se encuentra registrado un empleado con el correo electrónico '{employee_email}' en Odoo")
         employee_id = self.models.execute_kw(
             OdooConfig.ODOO_DB_NAME, self.uid, OdooConfig.ODOO_PASSWORD,
             'hr.employee', 'create',

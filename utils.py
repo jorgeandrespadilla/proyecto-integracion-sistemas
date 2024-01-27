@@ -20,3 +20,14 @@ def generate_password(string_length=16):
     chars = string.ascii_letters + string.digits + string.punctuation
     password = ''.join(random.choice(chars) for _ in range(string_length))
     return password
+
+# Gets a list of errors from an exception and its causes
+def get_error_chain(exception):
+    errors = []
+    while exception is not None:
+        errors.append({
+            'type': type(exception).__name__,
+            'message': str(exception),
+        })
+        exception = exception.__cause__
+    return errors

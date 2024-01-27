@@ -7,6 +7,7 @@ from services.mail import MailService
 from services.odoo import OdooService
 from services.storage import NextCloudService
 from templates import offboarding_email_template, onboarding_email_template
+from utils import get_error_chain
 
 app = Flask(__name__)
 
@@ -26,10 +27,12 @@ def get_from_request(key: str, required: bool = True):
 def success_response(data: dict = {}, status_code: int = 200):
     return jsonify(data), status_code
         
-def failure_response(message: str, status_code: int = 400):
+def failure_response(message: str, status_code: int = 400, errors: list = []):
     return jsonify({
         'message': message,
+        'errors': errors,
     }), status_code
+
 
 @app.get('/')
 def api():
@@ -74,11 +77,11 @@ def onboarding():
             raise Exception("Error al enviar el correo con Sendgrid") from e
 
     except Exception as e:
+        print("Cancelando proceso de onboarding")
         invoker.undo_all()
-        message = f'Error al ejecutar el proceso de onboarding: {e}'
-        print(message)
-        print(e.with_traceback())
-        return failure_response(message)
+        message = f'Error al ejecutar el proceso de onboarding'
+        errors = [error['message'] for error in get_error_chain(e)]
+        return failure_response(message, errors=errors)
     
     message = f'Proceso de onboarding completado para usuario {onboarding_data.name} ({onboarding_data.company_email})'
     print(message)
