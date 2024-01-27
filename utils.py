@@ -1,9 +1,18 @@
 import random
 import string
+import unicodedata
+
+def remove_accents(input_str):
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+def normalize_name(name):
+    normalized = remove_accents(name)
+    return normalized.strip().lower()
 
 # Generate a unique email
 def create_user_email(fullname, domain):
-    email = f'{fullname.replace(" ", ".").lower()}@{domain}'
+    email = f'{normalize_name(fullname).replace(" ", ".")}@{domain}'
     return email
 
 # Generate a random password
