@@ -80,7 +80,7 @@ def onboarding():
         print(e.with_traceback())
         return failure_response(message)
     
-    message = f'Proceso de onboarding completado para usuario {onboarding_data.name}'
+    message = f'Proceso de onboarding completado para usuario {onboarding_data.name} ({onboarding_data.private_email})'
     print(message)
     return success_response({
         "message": message
