@@ -1,9 +1,12 @@
 from flask import Flask, jsonify, request
+from commands.base import Invoker
+from commands.nextcloud_command import NextCloudCommand, NextCloudReceiver
+from commands.odoo_command import OdooCommand, OdooReceiver
+from commands.store import UserOnboardingData
 from services.mail import MailService
 from services.odoo import OdooService
 from services.storage import NextCloudService
 from templates import offboarding_email_template, onboarding_email_template
-from utils import create_user_email, generate_password
 
 app = Flask(__name__)
 
@@ -41,59 +44,42 @@ def onboarding():
     except Exception as e:
         return failure_response(str(e))
     
-    email = create_user_email(name, "example.com")
-    password = generate_password()
+    onboarding_data = UserOnboardingData(
+        name=name,
+        work_phone=work_phone,
+        private_email=private_email,
+    )
+    invoker = Invoker()
 
-    # Odoo: create user and employee
     try:
-        employee_id = odoo_service.create_employee({
-            'name': name,
-            'work_phone': work_phone,
-            'work_email': email,
-            'private_email': private_email,
-        })
-        print(f'Odoo - Empleado creado con ID {employee_id}')
+        invoker.execute(OdooCommand(
+            receiver=OdooReceiver(odoo_service),
+            onboarding_data=onboarding_data,
+        ))
+        invoker.execute(NextCloudCommand(
+            receiver=NextCloudReceiver(nextcloud_service),
+            onboarding_data=onboarding_data,
+        ))
 
-        user_id = odoo_service.create_user({
-            'name': name,
-            'login': email,
-            'email': email,
-            'password': password,
-            'employee_ids': [employee_id],
-        })
-        print(f'Odoo - Usuario creado con ID {user_id}')
+        # Send email
+        try:
+            email_data = onboarding_email_template(onboarding_data.name, onboarding_data.private_email, onboarding_data.password)
+            mail_service.send_email(
+                onboarding_data.private_email,
+                email_data.subject,
+                email_data.body
+            )
+            print("Correo enviado a '{onboarding_data.private_email}'")
+        except Exception as e:
+            raise Exception("Error al enviar el correo con Sendgrid") from e
 
     except Exception as e:
-        print(f'Odoo - Error al crear el empleado: {e}')
-        return failure_response(str(e))
-
-    # Nextcloud (storage): create user
-    try:
-        nextcloud_service.create_user({
-            'email': email,
-            'password': password,
-            'name': name,
-            'quota_in_gb': 5,
-        })
-        print(f'Nextcloud - Usuario creado')
-    except Exception as e:
-        print(f'Nextcloud - Error al crear el usuario de Nextcloud: {e}')
-        return failure_response(str(e))
-
-    # Send email
-    try:
-        email_data = onboarding_email_template(name, email, password)
-        mail_service.send_email(
-            private_email,
-            email_data.subject,
-            email_data.body
-        )
-        print(f"Sendgrid - Se ha enviado un correo a '{private_email}' con las instrucciones")
-    except Exception as e:
-        print(f'Sendgrid - Error al enviar el correo: {e}')
-        return failure_response("Sendgrid - Error al enviar el correo")
-
-    return success_response(f"Usuario creado ({email})")
+        invoker.undo_all()
+        message = f'Error al ejecutar el proceso de onboarding: {e}'
+        print(message)
+        print(e.with_traceback())
+        return failure_response(message)
+    print('Proceso de onboarding completado')
 
 
 @app.post('/offboarding')
@@ -107,30 +93,32 @@ def offboarding():
     try:
         user = odoo_service.find_user_by_email(email)
         if not user:
-            print('Odoo - No se encontró el usuario')
+            print('No se encontró el usuario en Odoo')
         else:
             odoo_service.delete_user(user[0]['id'])
-            print('Odoo - Usuario eliminado')
+            print('Usuario eliminado de Odoo')
 
         employee = odoo_service.find_employee_by_email(email)
         if not employee:
-            print('Odoo - No se encontró el empleado')
+            print('No se encontró el empleado en Odoo')
         else:
             employee_name = employee[0]['name']
             employee_private_email = employee[0]['private_email']
             odoo_service.delete_employee(employee[0]['id'])
-            print('Odoo - Empleado eliminado')
+            print('Empleado eliminado de Odoo')
     except Exception as e:
-        print(f'Odoo - Error al eliminar el empleado: {e}')
-        return failure_response(str(e))
+        message = f'Error al eliminar el empleado: {e}'
+        print(message)
+        return failure_response(message)
 
     # Nextcloud (storage): delete user
     try:
         nextcloud_service.delete_user(email)
         print('Nextcloud - Usuario eliminado de Nextcloud')
     except Exception as e:
-        print(f'Nextcloud - Error al eliminar el usuario de Nextcloud: {e}')
-        return failure_response(str(e))
+        message = f'Error al eliminar el usuario de Nextcloud: {e}'
+        print(message)
+        return failure_response(message)
 
     # Send email
     try:
@@ -140,9 +128,10 @@ def offboarding():
             email_data.subject,
             email_data.body
         )
-        print(f"Sendgrid - Se ha enviado un correo a '{employee_private_email}' con el aviso")
+        print(f"SSe ha enviado un correo a '{employee_private_email}'")
     except Exception as e:
-        print(f'Sendgrid - Error al enviar el correo: {e}')
-        return failure_response("Error al enviar el correo")
+        message = f'Error al enviar el correo con Sendgrid: {e}'
+        print(message)
+        return failure_response(message)
 
-    return success_response(f"Usuario eliminado ({email})")
+    return success_response('Proceso de offboarding completado')
