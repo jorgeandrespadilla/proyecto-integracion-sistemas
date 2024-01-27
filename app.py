@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from commands.base import Invoker
 from commands.nextcloud_command import NextCloudCommand, NextCloudReceiver
 from commands.odoo_command import OdooCommand, OdooReceiver
@@ -10,6 +11,7 @@ from templates import offboarding_email_template, onboarding_email_template
 from utils import get_error_chain
 
 app = Flask(__name__)
+CORS(app)
 
 mail_service = MailService()
 odoo_service = OdooService()
